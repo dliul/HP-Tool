@@ -10,6 +10,8 @@ testing on following devices.
 - Intel Neural Compute Stick 2
 
 
+## Requirements
+
 ## Run on CPU
 
 
@@ -17,6 +19,9 @@ testing on following devices.
 
 
 ## Run on TX2
+### requirements
+
+### commands
 ``` shell script
 bash download.sh
 bash run.sh tx2
