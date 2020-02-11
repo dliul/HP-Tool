@@ -17,8 +17,10 @@ testing on following devices.
 
 
 ## Run on TX2
-
-
+``` shell script
+bash download.sh
+bash run.sh tx2
+```
 ## Run on TPU
 
 
