@@ -65,4 +65,4 @@ run_models(){
   fi
 }
 
-run_models inception_v3
+run_models resnet50_v1

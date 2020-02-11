@@ -9,6 +9,25 @@ import json
 import cv2
 import re
 from PIL import Image
+import csv
+import threading
+
+
+def powerGet():
+    global power_tmp
+    power_tmp = []
+    while 1 and con_thread:
+        with os.popen('cat /sys/bus/i2c/drivers/ina3221x/0-0041/iio_device/in_power0_input') as process:
+            output = process.read()
+            power = float(int(output)) / 1000
+            power_tmp.append(power)
+            time.sleep(0.1)
+
+
+def thread_it(func, *args):
+    t = threading.Thread(target=func, args=args)
+    t.setDaemon(True)
+    return t
 
 
 def openImgs(img_dir_path, test_image_txt, normalize, height, width, channels, batch_size, load_number, current_number,
@@ -57,7 +76,8 @@ def run_main(model_path, img_dir_path, normalize, label_path, batch_size, test_n
     total_images_num = len(test_image_txt)
     total_iteration = int(total_images_num / test_number) + 1
     result_all = []
-
+    global power_all
+    global con_thread
     detection_graph = tf.Graph()
     with detection_graph.as_default():
         graph_def = tf.GraphDef()
@@ -89,13 +109,20 @@ def run_main(model_path, img_dir_path, normalize, label_path, batch_size, test_n
                                        test_number, iteration, total_images_num)
                 for images in images_load:
                     start = time.time()
+                    power_t = thread_it(powerGet)
+                    con_thread = True
+                    power_t.start()
                     predictions = sess.run(image_tensor, {input_tensor: images})
-                    times.append(time.time()-start)
+                    con_thread = False
+                    power_all.append(power_tmp)
+                    times.append(time.time() - start)
                     for precision in predictions:
                         result_all.append(precision)
                 del images_load
 
     print(times)
+    for item in power_all:
+        print(sum(item)/len(item))
     anns = []
     class1 = []
     class5 = []
@@ -131,7 +158,7 @@ def run_main(model_path, img_dir_path, normalize, label_path, batch_size, test_n
 
     print('Top-1 Accuracy: ', true_num / len(id))
     print('Top-5 Accuracy: ', true_num5 / len(id))
-    print("Execution time: ",sum(times))
+    print("Execution time: ", sum(times[1:]))
 
     with open(results_name, 'w+', encoding='utf-8') as file:
         json.dump(anns, file, ensure_ascii=False)
@@ -147,6 +174,9 @@ if __name__ == "__main__":
     test_number = 200
     batch_size = 2
     normalize = 1
+    power_all = []
+    power_tmp = []
+    con_thread = True
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--modelpath", help="The path of the frozen model")
