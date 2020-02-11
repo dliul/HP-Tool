@@ -72,3 +72,4 @@ prepare_model(){
 
 prepare_model inception_v3
 prepare_model resnet50_v1
+prepare_model mobilenet_v3
